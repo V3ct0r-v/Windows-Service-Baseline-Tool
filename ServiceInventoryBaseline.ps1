@@ -60,6 +60,20 @@ function Write-ColorLine {
     Write-Host $Text -ForegroundColor $Color
 }
 
+function Test-DynamicServiceName {
+    param([string]$Name)
+    # Service names ending with a hex suffix (e.g. _4b52cd2) are per-user/per-session services whose suffix changes each reboot
+    return $Name -match '_[0-9a-f]{4,10}$'
+}
+
+function Get-ServiceBaseName {
+    param([string]$Name)
+    if (Test-DynamicServiceName -Name $Name) {
+        return $Name -replace '_[0-9a-f]{4,10}$', ''
+    }
+    return $Name
+}
+
 function Resolve-FullPath {
     param(
         [Parameter(Mandatory = $true)]
@@ -88,6 +102,7 @@ function Get-ServiceInventory {
             'Service Description (from Microsoft)'  = $svc.Description
             'Start Mode'                            = $svc.StartMode
             'Reason service is disable or enabled'  = ''
+            'Dynamic Name (Reboots)'                = (Test-DynamicServiceName -Name $svc.Name)
         }
     }
 
@@ -107,6 +122,7 @@ function Show-ServiceTable {
             'Service Name (Displayed)',
             'Service Name (Internal)',
             'Start Mode',
+            'Dynamic Name (Reboots)',
             'Reason service is disable or enabled' -AutoSize |
         Out-Host
 }
@@ -265,19 +281,26 @@ function Compare-ServiceInventory {
     Write-Log ("Baseline count: {0}" -f @($baseline).Count)
     Write-Log ("Current system count: {0}" -f @($current).Count)
 
+    # Build maps keyed by base name (dynamic services have their hex suffix stripped)
+    $dynamicKeys = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+
     $baselineMap = @{}
     foreach ($svc in $baseline) {
-        $key = [string]$svc.'Service Name (Internal)'
+        $rawName = [string]$svc.'Service Name (Internal)'
+        $key = Get-ServiceBaseName -Name $rawName
         if (-not [string]::IsNullOrWhiteSpace($key)) {
             $baselineMap[$key] = $svc
+            if (Test-DynamicServiceName -Name $rawName) { [void]$dynamicKeys.Add($key) }
         }
     }
 
     $currentMap = @{}
     foreach ($svc in $current) {
-        $key = [string]$svc.'Service Name (Internal)'
+        $rawName = [string]$svc.'Service Name (Internal)'
+        $key = Get-ServiceBaseName -Name $rawName
         if (-not [string]::IsNullOrWhiteSpace($key)) {
             $currentMap[$key] = $svc
+            if (Test-DynamicServiceName -Name $rawName) { [void]$dynamicKeys.Add($key) }
         }
     }
 
@@ -286,7 +309,7 @@ function Compare-ServiceInventory {
     Write-Log ("Total unique services to compare: {0}" -f @($allKeys).Count)
 
     $matchCount = 0
-    $diffCount = 0
+    $diffCount  = 0
 
     Write-ColorLine "" White
     Write-ColorLine "Comparison results" Cyan
@@ -295,6 +318,7 @@ function Compare-ServiceInventory {
     foreach ($key in $allKeys) {
         $inBaseline = $baselineMap.ContainsKey($key)
         $inCurrent  = $currentMap.ContainsKey($key)
+        $tag        = if ($dynamicKeys.Contains($key)) { ' (dynamic)' } else { '' }
 
         if ($inBaseline -and $inCurrent) {
             $b = $baselineMap[$key]
@@ -308,30 +332,30 @@ function Compare-ServiceInventory {
 
             if (@($differences).Count -eq 0) {
                 $matchCount++
-                Write-ColorLine ("[+] MATCH    {0}  StartMode={1}" -f $key, [string]$c.'Start Mode') Green
-                Write-Log ("MATCH: {0} StartMode={1}" -f $key, [string]$c.'Start Mode')
+                Write-ColorLine ("[+] MATCH    {0}{1}  StartMode={2}" -f $key, $tag, [string]$c.'Start Mode') Green
+                Write-Log ("MATCH: {0}{1} StartMode={2}" -f $key, $tag, [string]$c.'Start Mode')
             }
             else {
                 $diffCount++
-                Write-ColorLine ("[-] DIFFER   {0}  JSON={1}  SYSTEM={2}" -f `
-                    $key,
+                Write-ColorLine ("[-] DIFFER   {0}{1}  JSON={2}  SYSTEM={3}" -f `
+                    $key, $tag,
                     [string]$b.'Start Mode',
                     [string]$c.'Start Mode') Red
-                Write-Log ("DIFFERENCE: {0} JSON StartMode={1}; SYSTEM StartMode={2}" -f `
-                    $key,
+                Write-Log ("DIFFERENCE: {0}{1} JSON StartMode={2}; SYSTEM StartMode={3}" -f `
+                    $key, $tag,
                     [string]$b.'Start Mode',
                     [string]$c.'Start Mode')
             }
         }
         elseif ($inBaseline -and -not $inCurrent) {
             $diffCount++
-            Write-ColorLine ("[MISSING]  {0}  Present in JSON, missing on system" -f $key) Red
-            Write-Log ("MISSING ON SYSTEM: {0}" -f $key)
+            Write-ColorLine ("[MISSING]  {0}{1}  Present in JSON, missing on system" -f $key, $tag) Red
+            Write-Log ("MISSING ON SYSTEM: {0}{1}" -f $key, $tag)
         }
         elseif (-not $inBaseline -and $inCurrent) {
             $diffCount++
-            Write-ColorLine ("[EXTRA]    {0}  Present on system, missing in JSON" -f $key) Red
-            Write-Log ("EXTRA ON SYSTEM: {0}" -f $key)
+            Write-ColorLine ("[EXTRA]    {0}{1}  Present on system, missing in JSON" -f $key, $tag) Red
+            Write-Log ("EXTRA ON SYSTEM: {0}{1}" -f $key, $tag)
         }
     }
 
