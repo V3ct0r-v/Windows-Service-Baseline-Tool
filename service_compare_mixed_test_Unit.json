@@ -1,65 +1,74 @@
 [
   {
-    "Service Name (Displayed)": "Windows Audio Endpoint Builder",
-    "Service Name (Internal)": "AudioEndpointBuilder",
-    "Service Description (from Microsoft)": "Manages audio devices for the Windows Audio service.  If this service is stopped, audio devices and effects will not function properly.  If this service is disabled, any services that explicitly depend on it will fail to start",
-    "Start Mode": "Auto",
-    "Reason service is disable or enabled": ""
-  },
-  {
-    "Service Name (Displayed)": "Remote Procedure Call (RPC)",
+    "Service Name (Displayed)": "TEST: STATIC MATCH — Remote Procedure Call (RPC)",
     "Service Name (Internal)": "RpcSs",
-    "Service Description (from Microsoft)": "The RPCSS service is the Service Control Manager for COM and DCOM servers. It performs object activations requests, object exporter resolutions and distributed garbage collection for COM and DCOM servers. If this service is stopped or disabled, programs using COM or DCOM will not function properly. It is strongly recommended that you have the RPCSS service running.",
+    "Service Description (from Microsoft)": "Expected result: [+] MATCH. StartMode=Auto matches the live system.",
     "Start Mode": "Auto",
-    "Reason service is disable or enabled": ""
+    "Reason service is disable or enabled": "",
+    "Dynamic Name (Reboots)": false
   },
   {
-    "Service Name (Displayed)": "Application Information",
-    "Service Name (Internal)": "Appinfo",
-    "Service Description (from Microsoft)": "Facilitates the running of interactive applications with additional administrative privileges.  If this service is stopped, users will be unable to launch applications with the additional administrative privileges they may require to perform desired user tasks.",
-    "Start Mode": "Auto",
-    "Reason service is disable or enabled": ""
-  },
-  {
-    "Service Name (Displayed)": "DHCP Client",
-    "Service Name (Internal)": "Dhcp",
-    "Service Description (from Microsoft)": "Registers and updates IP addresses and DNS records for this computer. If this service is stopped, this computer will not receive dynamic IP addresses and DNS updates. If this service is disabled, any services that explicitly depend on it will fail to start.",
-    "Start Mode": "Disabled",
-    "Reason service is disable or enabled": ""
-  },
-  {
-    "Service Name (Displayed)": "Changed Display Name For Firewall",
-    "Service Name (Internal)": "mpssvc",
-    "Service Description (from Microsoft)": "Intentionally altered description for compare test.",
-    "Start Mode": "Auto",
-    "Reason service is disable or enabled": ""
-  },
-  {
-    "Service Name (Displayed)": "Windows Event Log",
+    "Service Name (Displayed)": "TEST: STATIC MATCH — Windows Event Log",
     "Service Name (Internal)": "EventLog",
-    "Service Description (from Microsoft)": "Completely different text for validation. Description should be ignored by compare.",
+    "Service Description (from Microsoft)": "Expected result: [+] MATCH. StartMode=Auto matches the live system.",
     "Start Mode": "Auto",
-    "Reason service is disable or enabled": ""
+    "Reason service is disable or enabled": "",
+    "Dynamic Name (Reboots)": false
   },
   {
-    "Service Name (Displayed)": "Fake Service One",
-    "Service Name (Internal)": "FakeSvc_One",
-    "Service Description (from Microsoft)": "Test only",
-    "Start Mode": "Auto",
-    "Reason service is disable or enabled": ""
+    "Service Name (Displayed)": "TEST: STATIC DIFFER — DHCP Client",
+    "Service Name (Internal)": "Dhcp",
+    "Service Description (from Microsoft)": "Expected result: [-] DIFFER. Baseline=Disabled but live system=Auto.",
+    "Start Mode": "Disabled",
+    "Reason service is disable or enabled": "",
+    "Dynamic Name (Reboots)": false
   },
   {
-    "Service Name (Displayed)": "Imaginary Service",
-    "Service Name (Internal)": "ImaginarySvc",
-    "Service Description (from Microsoft)": "Test only",
+    "Service Name (Displayed)": "TEST: STATIC DIFFER — Windows Defender Firewall",
+    "Service Name (Internal)": "mpssvc",
+    "Service Description (from Microsoft)": "Expected result: [-] DIFFER. Baseline=Manual but live system=Auto.",
     "Start Mode": "Manual",
-    "Reason service is disable or enabled": ""
+    "Reason service is disable or enabled": "",
+    "Dynamic Name (Reboots)": false
   },
   {
-    "Service Name (Displayed)": "Security Accounts Manager",
-    "Service Name (Internal)": "SamSs",
-    "Service Description (from Microsoft)": "The startup of this service signals other services that the Security Accounts Manager (SAM) is ready to accept requests.  Disabling this service will prevent other services in the system from being notified when the SAM is ready, which may in turn cause those services to fail to start correctly. This service should not be disabled.",
+    "Service Name (Displayed)": "TEST: STATIC MISSING — Fake Service Alpha",
+    "Service Name (Internal)": "FakeSvc_StaticMissing",
+    "Service Description (from Microsoft)": "Expected result: [MISSING]. This service does not exist on any live system.",
     "Start Mode": "Auto",
-    "Reason service is disable or enabled": ""
+    "Reason service is disable or enabled": "",
+    "Dynamic Name (Reboots)": false
+  },
+  {
+    "Service Name (Displayed)": "TEST: STATIC MISSING — Fake Service Beta",
+    "Service Name (Internal)": "AnotherGoneSvc",
+    "Service Description (from Microsoft)": "Expected result: [MISSING]. This service does not exist on any live system.",
+    "Start Mode": "Manual",
+    "Reason service is disable or enabled": "",
+    "Dynamic Name (Reboots)": false
+  },
+  {
+    "Service Name (Displayed)": "TEST: DYNAMIC MATCH — Agent Activation Runtime (baseline suffix _aabbcc)",
+    "Service Name (Internal)": "AarSvc_aabbcc",
+    "Service Description (from Microsoft)": "Expected result: [+] MATCH (dynamic). Base name AarSvc matches live AarSvc_4b52cd2. StartMode=Manual correct.",
+    "Start Mode": "Manual",
+    "Reason service is disable or enabled": "",
+    "Dynamic Name (Reboots)": true
+  },
+  {
+    "Service Name (Displayed)": "TEST: DYNAMIC DIFFER — Clipboard User Service (baseline suffix _aabbcc)",
+    "Service Name (Internal)": "cbdhsvc_aabbcc",
+    "Service Description (from Microsoft)": "Expected result: [-] DIFFER (dynamic). Base name cbdhsvc matches live cbdhsvc_4b52cd2. Baseline=Disabled but live system=Auto.",
+    "Start Mode": "Disabled",
+    "Reason service is disable or enabled": "",
+    "Dynamic Name (Reboots)": true
+  },
+  {
+    "Service Name (Displayed)": "TEST: DYNAMIC MISSING — Fake Dynamic Service (baseline suffix _aabbcc)",
+    "Service Name (Internal)": "FakeDynSvc_aabbcc",
+    "Service Description (from Microsoft)": "Expected result: [MISSING] (dynamic). Base name FakeDynSvc does not exist on any live system.",
+    "Start Mode": "Manual",
+    "Reason service is disable or enabled": "",
+    "Dynamic Name (Reboots)": true
   }
 ]
