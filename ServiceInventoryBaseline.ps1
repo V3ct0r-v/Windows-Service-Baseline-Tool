@@ -136,6 +136,11 @@ function Import-ServiceJson {
     $fullPath = Resolve-FullPath -Path $Path
     Write-Log ("Resolved JSON path: {0}" -f $fullPath)
 
+    if ([System.IO.Path]::GetExtension($fullPath) -ne '.json') {
+        Write-Log ("File does not have a .json extension: {0}" -f $fullPath) ERROR
+        throw "Expected a .json file but got: $fullPath"
+    }
+
     if (-not (Test-Path -Path $fullPath)) {
         Write-Log "JSON file not found: $fullPath" ERROR
         throw "JSON file not found: $fullPath"
@@ -149,7 +154,13 @@ function Import-ServiceJson {
         throw "JSON file is empty: $fullPath"
     }
 
-    $data = $raw | ConvertFrom-Json
+    try {
+        $data = $raw | ConvertFrom-Json
+    }
+    catch {
+        Write-Log ("Failed to parse JSON: {0}" -f $_.Exception.Message) ERROR
+        throw "File is not valid JSON: $fullPath`nDid you accidentally pass a .log or .csv file?"
+    }
 
     if ($null -eq $data) {
         Write-Log "JSON file parsed but returned no objects."
@@ -249,6 +260,11 @@ function Export-ServiceInventory {
     Write-Log "Displaying exported content in table format."
     Write-ColorLine "Displaying exported content:" Cyan
     Show-ServiceTable -Services $services
+
+    if ($AlsoExportCsv) {
+        return [PSCustomObject]@{ JsonPath = $jsonPath; CsvPath = $csvPath }
+    }
+    return [PSCustomObject]@{ JsonPath = $jsonPath; CsvPath = $null }
 }
 
 function View-ServiceJson {
@@ -429,9 +445,11 @@ try {
     Write-Log ("Selected mode: {0}" -f $mode)
     Write-ColorLine ("Selected mode: {0}" -f $mode) Cyan
 
+    $exportedFiles = $null
+
     switch ($mode) {
         'Export' {
-            Export-ServiceInventory -Folder $ExportFolder -AlsoExportCsv $ExportCsv.IsPresent
+            $exportedFiles = Export-ServiceInventory -Folder $ExportFolder -AlsoExportCsv $ExportCsv.IsPresent
         }
         'View' {
             View-ServiceJson -Path $ViewJson
@@ -447,6 +465,13 @@ try {
 
     Write-Log "Script completed successfully."
     Write-ColorLine "Script completed successfully." Green
+
+    if ($null -ne $exportedFiles) {
+        Write-ColorLine ("  JSON : {0}" -f $exportedFiles.JsonPath) Green
+        if ($null -ne $exportedFiles.CsvPath) {
+            Write-ColorLine ("  CSV  : {0}" -f $exportedFiles.CsvPath) Green
+        }
+    }
 }
 catch {
     Write-Log ("Unhandled error: {0}" -f $_.Exception.Message) ERROR
