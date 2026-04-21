@@ -7,62 +7,81 @@ PowerShell script to export, view, and compare Windows service configurations fo
 - Export services to timestamped JSON
 - Optional CSV export
 - View saved baseline in table format
-- Compare system against baseline
-- Detect configuration drift
+- Compare current system against a baseline
+- Detect configuration drift (Start Mode changes, added/removed services)
+- Automatic detection and correct comparison of dynamic per-user/per-session service names
 - Timestamped logging
-
-## Comparison Logic
-- Match key: Service Name (Internal)
-- Compared field: Start Mode
-- Ignored fields: Display Name, Description
 
 ## Usage
 
 ```powershell
-Export services
+# Export services to JSON
 .\ServiceInventoryBaseline.ps1 -ExportFolder .
-Export services (JSON and CSV)
+
+# Export services to JSON and CSV
 .\ServiceInventoryBaseline.ps1 -ExportFolder . -ExportCsv
-View baseline
+
+# View a baseline file in table format
 .\ServiceInventoryBaseline.ps1 -ViewJson .\services_YYYYMMDD_HHMMSS.json
-Compare system to baseline
+
+# Compare the current system against a baseline
 .\ServiceInventoryBaseline.ps1 -CompareJson .\services_YYYYMMDD_HHMMSS.json
 ```
+
+## Comparison Logic
+- **Match key:** Service Name (Internal). For dynamic services the hex suffix is stripped before matching, so `AarSvc_4b52cd2` (baseline) matches `AarSvc_7a3b1f9` (current system) via the shared base name `AarSvc`.
+- **Compared field:** Start Mode
+- **Ignored fields:** Display Name, Description, Reason service is disable or enabled
+
+## Dynamic Service Names
+Windows creates per-user and per-session services with a randomly generated hex suffix (e.g. `AarSvc_4b52cd2`, `CDPUserSvc_4b52cd2`). The suffix changes on every reboot.
+
+The script handles these automatically:
+- **On export** — the `Dynamic Name (Reboots)` field is set to `true` for any service whose internal name ends with `_[0-9a-f]{4-10}`.
+- **On compare** — the suffix is stripped from both sides before building the lookup maps, so dynamic services are matched and compared by their base name like any other service.
+- **In output** — dynamic services are labelled `(dynamic)` on every comparison result line.
 
 ## Output
 
 ### Files
-- services_YYYYMMDD_HHMMSS.json  
-- services_YYYYMMDD_HHMMSS.csv (optional)  
-- ServiceInventory_YYYYMMDD_HHMMSS.log  
+- `services_YYYYMMDD_HHMMSS.json`
+- `services_YYYYMMDD_HHMMSS.csv` (optional, requires `-ExportCsv`)
+- `ServiceInventory_YYYYMMDD_HHMMSS.log`
 
-### Compare Results
-- `[+] MATCH`    Service exists and start mode matches  
-- `[-] DIFFER`   Start mode differs  
-- `[MISSING]`    Present in JSON, missing on system  
-- `[EXTRA]`      Present on system, missing in JSON  
+### Compare Result Lines
+| Prefix | Meaning |
+|--------|---------|
+| `[+] MATCH` | Service present on both sides; Start Mode matches |
+| `[-] DIFFER` | Service present on both sides; Start Mode differs |
+| `[MISSING]` | Present in baseline JSON, not found on current system |
+| `[EXTRA]` | Present on current system, not in baseline JSON |
+
+Dynamic services append `(dynamic)` to the service name in every result line.
+
+### Compare Summary
+```
+Matches     : 45
+Differences : 3
+```
 
 ## JSON Format
+
+Each entry exported to JSON contains:
+
 ```json
 {
-  "Service Name (Displayed)": "...",
-  "Service Name (Internal)": "...",
+  "Service Name (Displayed)": "Agent Activation Runtime_4b52cd2",
+  "Service Name (Internal)": "AarSvc_4b52cd2",
   "Service Description (from Microsoft)": "...",
-  "Start Mode": "Auto | Manual | Disabled",
-  "Reason service is disable or enabled": ""
+  "Start Mode": "Manual",
+  "Reason service is disable or enabled": "",
+  "Dynamic Name (Reboots)": true
 }
 ```
 
+`Dynamic Name (Reboots)` is `false` for all static services.
+
 ## Notes
-Timestamped exports prevent overwrite
-Duplicate service names in JSON: last entry wins
-Designed for service startup baseline and drift detection
-
-## Example output
-[+] MATCH    RpcSs  StartMode=Auto
-[-] DIFFER   Dhcp   JSON=Disabled  SYSTEM=Auto
-[MISSING]    FakeSvc_One
-[EXTRA]      Spooler
-
-Matches     : 45
-Differences : 3
+- Timestamped filenames prevent overwrite; each export produces a new file.
+- If the same service name appears more than once in a JSON file, the last entry wins.
+- Re-export the baseline after OS updates or software installs that add new permanent services.
