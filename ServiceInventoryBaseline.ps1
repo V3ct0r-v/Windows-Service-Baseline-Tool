@@ -346,16 +346,16 @@ function Show-Usage {
     Write-Host ""
     Write-Host "Usage:" -ForegroundColor Cyan
     Write-Host "  Export timestamped JSON:"
-    Write-Host "    .\ServiceInventory.ps1 -ExportFolder ."
+    Write-Host "    .\ServiceInventoryBaseline.ps1 -ExportFolder ."
     Write-Host ""
     Write-Host "  Export timestamped JSON and CSV:"
-    Write-Host "    .\ServiceInventory.ps1 -ExportFolder . -ExportCsv"
+    Write-Host "    .\ServiceInventoryBaseline.ps1 -ExportFolder . -ExportCsv"
     Write-Host ""
     Write-Host "  View a JSON file in table format:"
-    Write-Host "    .\ServiceInventory.ps1 -ViewJson .\services_20260421_120000.json"
+    Write-Host "    .\ServiceInventoryBaseline.ps1 -ViewJson .\services_20260421_120000.json"
     Write-Host ""
     Write-Host "  Compare current system to a JSON baseline:"
-    Write-Host "    .\ServiceInventory.ps1 -CompareJson .\services_20260421_120000.json"
+    Write-Host "    .\ServiceInventoryBaseline.ps1 -CompareJson .\services_20260421_120000.json"
     Write-Host ""
 }
 
