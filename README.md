@@ -20,13 +20,13 @@ PowerShell script to export, view, and compare Windows service configurations fo
 
 ```powershell
 Export services
-.\ServiceInventory.ps1 -ExportFolder .
+.\ServiceInventoryBaseline.ps1 -ExportFolder .
 Export services (JSON and CSV)
-.\ServiceInventory.ps1 -ExportFolder . -ExportCsv
+.\ServiceInventoryBaseline.ps1 -ExportFolder . -ExportCsv
 View baseline
-.\ServiceInventory.ps1 -ViewJson .\services_YYYYMMDD_HHMMSS.json
+.\ServiceInventoryBaseline.ps1 -ViewJson .\services_YYYYMMDD_HHMMSS.json
 Compare system to baseline
-.\ServiceInventory.ps1 -CompareJson .\services_YYYYMMDD_HHMMSS.json
+.\ServiceInventoryBaseline.ps1 -CompareJson .\services_YYYYMMDD_HHMMSS.json
 ```
 
 ## Output
